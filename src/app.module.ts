@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './resources/auth/auth.module';
 import { UserModule } from './resources/user/user.module';
 import { CustomerModule } from './resources/customer/customer.module';
@@ -14,10 +14,31 @@ import { InventoryLogModule } from './resources/inventory-log/inventory-log.modu
 import { ReturnModule } from './resources/return/return.module';
 import { AdressModule } from './resources/adress/adress.module';
 import { AuditLogModule } from './resources/audit-log/audit-log.module';
+import { APP_FILTER } from '@nestjs/core';
+import { HttpExceptionFilter } from './resources/common/filters/http-exception.filter';
 
 @Module({
-  imports: [AuthModule, UserModule, CustomerModule, ProductModule, OrderModule, InvoiceModule, PaymentModule, SubscriptionModule, InventoryLogModule, ReturnModule, AdressModule, AuditLogModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    AuthModule,
+    UserModule,
+    CustomerModule,
+    ProductModule,
+    OrderModule,
+    InvoiceModule,
+    PaymentModule,
+    SubscriptionModule,
+    InventoryLogModule,
+    ReturnModule,
+    AdressModule,
+    AuditLogModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
