@@ -9,6 +9,7 @@ import { OrderModule } from './resources/order/order.module';
 import { InvoiceModule } from './resources/invoice/invoice.module';
 import { PaymentModule } from './resources/payment/payment.module';
 import { SubscriptionModule } from './resources/subscription/subscription.module';
+import { CompanyModule } from './resources/company/company.module';
 
 import { InventoryLogModule } from './resources/inventory-log/inventory-log.module';
 import { ReturnModule } from './resources/return/return.module';
@@ -29,6 +30,7 @@ import { HttpExceptionFilter } from './resources/common/filters/http-exception.f
     InvoiceModule,
     PaymentModule,
     SubscriptionModule,
+    CompanyModule,
     InventoryLogModule,
     ReturnModule,
     AdressModule,
