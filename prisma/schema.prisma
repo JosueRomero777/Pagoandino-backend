@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js" 
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -7,9 +7,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum UserRole {
+  SUPER_ADMIN
   ADMIN
-  USER
+  MANAGER
+  CASHIER
+  INVENTORY_MANAGER
+  ACCOUNTANT
+  VIEWER
+}
+
+enum UserPermission {
+  // User Management
+  CREATE_USER
+  READ_USER
+  UPDATE_USER
+  DELETE_USER
+  
+  // Customer Management
+  CREATE_CUSTOMER
+  READ_CUSTOMER
+  UPDATE_CUSTOMER
+  DELETE_CUSTOMER
+  
+  // Product Management
+  CREATE_PRODUCT
+  READ_PRODUCT
+  UPDATE_PRODUCT
+  DELETE_PRODUCT
+  
+  // Inventory Management
+  MANAGE_INVENTORY
+  VIEW_INVENTORY
+  
+  // Order Management
+  CREATE_ORDER
+  READ_ORDER
+  UPDATE_ORDER
+  DELETE_ORDER
+  
+  // Invoice Management
+  CREATE_INVOICE
+  READ_INVOICE
+  UPDATE_INVOICE
+  DELETE_INVOICE
+  
+  // Payment Management
+  PROCESS_PAYMENT
+  VIEW_PAYMENTS
+  
+  // Return Management
+  PROCESS_RETURN
+  VIEW_RETURNS
+  
+  // Reports
+  VIEW_REPORTS
+  EXPORT_REPORTS
+  
+  // System Settings
+  MANAGE_SETTINGS
+  VIEW_AUDIT_LOGS
+}
+
+enum DocumentType {
+  FACTURA
+  NOTA_CREDITO
+  NOTA_DEBITO
+  GUIA_REMISION
+  RETENCION
+  LIQUIDACION_COMPRA
+}
+
+enum TaxType {
+  IVA_0
+  IVA_12
+  IVA_14
+  ICE
+  IRBPNR
+  NO_OBJETO_IVA
+  EXENTO_IVA
 }
 
 enum PaymentMethod {
@@ -40,23 +116,100 @@ enum EntityType {
   SUBSCRIPTION
 }
 
+enum SubscriptionPlan {
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
 enum SubscriptionStatus {
   ACTIVE
   INACTIVE
   CANCELLED
+  PENDING_PAYMENT
+  EXPIRED
+  TRIAL
+}
+
+enum PaymentProvider {
+  PAYPHONE
+  STRIPE
+  TRANSFER
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum Environment {
+  PRUEBAS
+  PRODUCCION
+}
+
+model RolePermission {
+  id         String        @id @default(uuid())
+  role       Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId     String
+  permission UserPermission
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([roleId, permission])
+}
+
+model Role {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  permissions RolePermission[]
+  userRoles   UserRoleAssignment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isActive    Boolean    @default(true)
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, roleId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
-  deletedAt DateTime?
-  auditLogs AuditLog[]
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  password      String
+  roles         UserRoleAssignment[]
+  company       Company?   @relation(fields: [companyId], references: [id])
+  companyId     String?
+  lastLogin     DateTime?
+  refreshToken  String?    // Para manejar sesiones
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+  auditLogs     AuditLog[]
+  inventoryLogs InventoryLog[]
 }
 
 model Customer {
@@ -84,45 +237,82 @@ model Address {
 }
 
 model Product {
-  id           String        @id @default(uuid())
-  name         String
-  description  String?
-  price        Float
-  sku          String        @unique
-  stock        Int
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  isActive     Boolean       @default(true)
-  deletedAt    DateTime?
-  orderItems   OrderItem[]
-  invoiceItems InvoiceItem[]
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  sku           String        @unique
+  barcode       String?       // Código de barras
+  price         Float
+  cost          Float         // Costo de adquisición
+  stock         Int
+  minStock      Int           @default(0)
+  maxStock      Int?
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  images        ProductImage[]
+  orderItems    OrderItem[]
+  invoiceItems  InvoiceItem[]
   inventoryLogs InventoryLog[]
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  products    Product[]
+  parent      Category? @relation("CategoryToSubcategory", fields: [parentId], references: [id])
+  parentId    String?
+  children    Category[] @relation("CategoryToSubcategory")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isActive    Boolean   @default(true)
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  url       String   // URL en S3
+  isMain    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model InventoryLog {
-  id         String   @id @default(uuid())
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  String
-  quantity   Int
-  reason     String
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   String
+  quantity    Int
+  type        String   // ENTRY, EXIT, ADJUSTMENT
+  reason      String
+  reference   String?  // ID de orden, factura, etc.
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
 }
 
 model Order {
-  id         String     @id @default(uuid())
-  customer   Customer   @relation(fields: [customerId], references: [id])
-  customerId String
-  date       DateTime   @default(now())
-  total      Float
-  status     String
-  payment    Payment?
-  invoice    Invoice?   // Relación inversa con Invoice
-  orderItems OrderItem[]
-  returns    Return[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  isActive   Boolean    @default(true)
-  deletedAt  DateTime?
+  id          String      @id @default(uuid())
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  customerId  String
+  date        DateTime    @default(now())
+  total       Float
+  subtotal    Float
+  tax         Float
+  discount    Float       @default(0)
+  status      String
+  payment     Payment?
+  invoice     Invoice?
+  orderItems  OrderItem[]
+  returns     Return[]
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
 }
 
 model OrderItem {
@@ -133,15 +323,32 @@ model OrderItem {
   productId String
   quantity  Int
   price     Float
+  discount  Float   @default(0)
 }
 
 model Invoice {
-  id           String        @id @default(uuid())
-  order        Order         @relation(fields: [orderId], references: [id])
-  orderId      String        @unique  // Relación 1:1, se requiere que sea único
-  total        Float
-  issuedAt     DateTime      @default(now())
-  invoiceItems InvoiceItem[]
+  id                String        @id @default(uuid())
+  order             Order         @relation(fields: [orderId], references: [id])
+  orderId           String        @unique
+  documentType      DocumentType
+  accessKey         String        @unique // Clave de acceso SRI
+  sequential        String        // Número secuencial
+  issueDate         DateTime      @default(now())
+  total             Float
+  subtotal          Float
+  taxAmount         Float
+  discountAmount    Float
+  taxType           TaxType
+  paymentType       PaymentMethod
+  invoiceItems      InvoiceItem[]
+  xmlContent        String?       // Contenido XML de la factura
+  pdfContent        String?       // URL del PDF en S3
+  status            String        // Estado de la factura en el SRI
+  sriResponse       Json?         // Respuesta del SRI
+  authorizationNumber String?     // Número de autorización
+  authorizationDate   DateTime?   // Fecha de autorización
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model InvoiceItem {
@@ -152,6 +359,7 @@ model InvoiceItem {
   productId  String
   quantity   Int
   price      Float
+  discount   Float   @default(0)
 }
 
 model Return {
@@ -166,7 +374,7 @@ model Return {
 model Payment {
   id            String        @id @default(uuid())
   order         Order         @relation(fields: [orderId], references: [id])
-  orderId       String        @unique  // Relación 1:1, se requiere unicidad
+  orderId       String        @unique
   method        PaymentMethod
   transactionId String?
   paidAt        DateTime      @default(now())
@@ -187,14 +395,69 @@ model AuditLog {
 }
 
 model Subscription {
-  id            String             @id @default(uuid())
-  companyName   String
-  email         String             @unique
-  startDate     DateTime
-  endDate       DateTime
-  status        SubscriptionStatus
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  isActive      Boolean            @default(true)
-  deletedAt     DateTime?
+  id                String             @id @default(uuid())
+  company           Company            @relation(fields: [companyId], references: [id])
+  companyId         String             @unique
+  plan              SubscriptionPlan
+  status            SubscriptionStatus
+  startDate         DateTime
+  endDate           DateTime
+  trialEndDate      DateTime?
+  price             Float
+  currency          String             @default("USD")
+  billingCycle      String             // MONTHLY, YEARLY
+  autoRenew         Boolean            @default(true)
+  lastPaymentDate   DateTime?
+  nextPaymentDate   DateTime?
+  payments          SubscriptionPayment[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  isActive          Boolean            @default(true)
+  deletedAt         DateTime?
+}
+
+model SubscriptionPayment {
+  id                String          @id @default(uuid())
+  subscription      Subscription    @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String
+  amount            Float
+  currency          String          @default("USD")
+  provider          PaymentProvider
+  status            PaymentStatus
+  transactionId     String?         // ID de la transacción en PayPhone/Stripe
+  paymentMethod     String?         // Detalles del método de pago
+  paymentDate       DateTime
+  receiptUrl        String?         // URL del recibo en S3
+  metadata          Json?           // Datos adicionales de la transacción
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Company {
+  id                String      @id @default(uuid())
+  name              String
+  ruc               String      @unique
+  businessName      String      // Razón Social
+  tradeName         String?     // Nombre Comercial
+  address           String
+  phone             String?
+  email             String?
+  environment       Environment @default(PRUEBAS)
+  users             User[]
+  subscription      Subscription?
+  // Campos SRI
+  accountingBook    String?     // Libro contable
+  retentionAgent    Boolean     @default(false)
+  specialTaxpayer   Boolean     @default(false)
+  accountingSystem  String?     // Sistema contable
+  // Campos adicionales SRI
+  establishmentCode String?     // Código del establecimiento
+  emissionPoint     String?     // Punto de emisión
+  digitalSignature  String?     // Firma digital
+  // Campos de almacenamiento
+  logoUrl           String?     // URL del logo en S3
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  isActive          Boolean     @default(true)
+  deletedAt         DateTime?
 }
