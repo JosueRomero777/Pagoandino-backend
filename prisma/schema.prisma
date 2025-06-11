@@ -7,68 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  MANAGER
-  CASHIER
-  INVENTORY_MANAGER
-  ACCOUNTANT
-  VIEWER
-}
-
-enum UserPermission {
-  // User Management
-  CREATE_USER
-  READ_USER
-  UPDATE_USER
-  DELETE_USER
-  
-  // Customer Management
-  CREATE_CUSTOMER
-  READ_CUSTOMER
-  UPDATE_CUSTOMER
-  DELETE_CUSTOMER
-  
-  // Product Management
-  CREATE_PRODUCT
-  READ_PRODUCT
-  UPDATE_PRODUCT
-  DELETE_PRODUCT
-  
-  // Inventory Management
-  MANAGE_INVENTORY
-  VIEW_INVENTORY
-  
-  // Order Management
-  CREATE_ORDER
-  READ_ORDER
-  UPDATE_ORDER
-  DELETE_ORDER
-  
-  // Invoice Management
-  CREATE_INVOICE
-  READ_INVOICE
-  UPDATE_INVOICE
-  DELETE_INVOICE
-  
-  // Payment Management
-  PROCESS_PAYMENT
-  VIEW_PAYMENTS
-  
-  // Return Management
-  PROCESS_RETURN
-  VIEW_RETURNS
-  
-  // Reports
-  VIEW_REPORTS
-  EXPORT_REPORTS
-  
-  // System Settings
-  MANAGE_SETTINGS
-  VIEW_AUDIT_LOGS
-}
-
 enum DocumentType {
   FACTURA
   NOTA_CREDITO
@@ -151,15 +89,15 @@ enum Environment {
   PRODUCCION
 }
 
-model RolePermission {
-  id         String        @id @default(uuid())
-  role       Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  roleId     String
-  permission UserPermission
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  @@unique([roleId, permission])
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  category    String?  // Para agrupar permisos
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       RolePermission[]
 }
 
 model Role {
@@ -173,6 +111,18 @@ model Role {
   isActive    Boolean    @default(true)
 }
 
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId       String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permissionId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([roleId, permissionId])
+}
+
 model UserRoleAssignment {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -183,15 +133,6 @@ model UserRoleAssignment {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, roleId])
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isActive    Boolean  @default(true)
 }
 
 model User {

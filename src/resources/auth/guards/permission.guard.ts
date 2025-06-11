@@ -1,20 +1,20 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RoleService } from '../../role/role.service';
-import { UserPermission } from '@prisma/client';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private roleService: RoleService,
+    private prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.get<UserPermission[]>(
-      'permissions',
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
       context.getHandler(),
-    );
+      context.getClass(),
+    ]);
 
     if (!requiredPermissions) {
       return true;
@@ -27,9 +27,29 @@ export class PermissionGuard implements CanActivate {
       return false;
     }
 
-    const userPermissions = await this.roleService.getUserPermissions(user.id);
-    return requiredPermissions.every((permission) =>
-      userPermissions.includes(permission),
-    );
+    // Obtener los permisos del usuario a través de sus roles
+    const userRoles = await this.prisma.userRoleAssignment.findMany({
+      where: { userId: user.id },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const userPermissions = new Set<string>();
+    userRoles.forEach(ur => {
+      ur.role.permissions.forEach(rp => {
+        userPermissions.add(rp.permission.name);
+      });
+    });
+
+    return requiredPermissions.every(permission => userPermissions.has(permission));
   }
 } 

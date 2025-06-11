@@ -15,10 +15,24 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
     if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user;
-      return result;
+      // Transformar la respuesta para incluir solo los roles
+      return {
+        ...result,
+        roles: result.roles.map(ur => ur.role)
+      };
     }
     return null;
   }
@@ -72,7 +86,16 @@ export class AuthService {
     }
 
     const { password: _, ...result } = user;
-    return result;
+
+    // Generar tokens
+    const tokens = await this.generateTokens(user);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      user: result,
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken
+    };
   }
 
   async login(loginDto: LoginDto) {

@@ -17,6 +17,7 @@ import { AdressModule } from './resources/adress/adress.module';
 import { AuditLogModule } from './resources/audit-log/audit-log.module';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './resources/common/filters/http-exception.filter';
+import { PermissionsModule } from './resources/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { HttpExceptionFilter } from './resources/common/filters/http-exception.f
     ReturnModule,
     AdressModule,
     AuditLogModule,
+    PermissionsModule,
   ],
   providers: [
     {

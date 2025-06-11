@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed": "ts-node prisma/seeders/permission.seeder.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -29,7 +30,6 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.0",
     "@prisma/client": "^6.7.0",
-    "@types/bcrypt": "^5.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "bcrypt": "^5.1.1",
@@ -51,6 +51,7 @@
     "@nestjs/testing": "^11.0.1",
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.10.7",
+    "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
