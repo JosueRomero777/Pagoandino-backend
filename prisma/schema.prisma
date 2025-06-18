@@ -183,6 +183,8 @@ model Product {
   description   String?
   sku           String        @unique
   barcode       String?       // Código de barras
+  qrCode        String?       // Código QR único del producto
+  weight        Float?        // Peso en gramos
   price         Float
   cost          Float         // Costo de adquisición
   stock         Int

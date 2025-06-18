@@ -29,4 +29,34 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   stock: number;
+
+  @ApiProperty({ example: 500.5, description: 'Peso en gramos', required: false })
+  @IsNumber()
+  @IsOptional()
+  weight?: number;
+
+  @ApiProperty({ example: '123456789', description: 'Código de barras', required: false })
+  @IsString()
+  @IsOptional()
+  barcode?: string;
+
+  @ApiProperty({ example: 'PROD_ABC123', description: 'Código QR único', required: false })
+  @IsString()
+  @IsOptional()
+  qrCode?: string;
+
+  @ApiProperty({ example: 'CAT001', description: 'ID de categoría', required: false })
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiProperty({ example: 10, description: 'Stock mínimo', required: false })
+  @IsInt()
+  @IsOptional()
+  minStock?: number;
+
+  @ApiProperty({ example: 1000, description: 'Stock máximo', required: false })
+  @IsInt()
+  @IsOptional()
+  maxStock?: number;
 }
