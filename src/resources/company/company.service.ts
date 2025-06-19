@@ -2,14 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { Environment as PrismaEnvironment } from '@prisma/client';
 
 @Injectable()
 export class CompanyService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCompanyDto: CreateCompanyDto) {
+    const { environment, ...rest } = createCompanyDto;
     return this.prisma.company.create({
-      data: createCompanyDto,
+      data: {
+        ...rest,
+        environment: environment as PrismaEnvironment,
+      },
     });
   }
 
