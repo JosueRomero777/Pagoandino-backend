@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsEnum } from 'class-validator';
-import { Environment } from '@prisma/client';
+import { Environment } from './environment.enum';
 
 export class CreateCompanyDto {
   @IsString()

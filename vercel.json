@@ -12,12 +12,7 @@
       "dest": "src/main.ts"
     }
   ],
-  "functions": {
-    "src/main.ts": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
-} 
+}
