@@ -13,7 +13,7 @@ export class CompanyService {
     return this.prisma.company.create({
       data: {
         ...rest,
-        environment: environment as PrismaEnvironment,
+        environment: environment ? environment.toString() as PrismaEnvironment : undefined,
       },
     });
   }
