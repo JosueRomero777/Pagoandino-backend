@@ -96,3 +96,25 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Despliegue en Railway
+
+## Pasos rápidos
+
+1. Sube tu proyecto a GitHub o GitLab.
+2. Ve a https://railway.app/ y crea un nuevo proyecto desde tu repo.
+3. Configura las variables de entorno necesarias en Railway (DATABASE_URL, JWT_SECRET, etc).
+4. Railway detectará los scripts de build y start automáticamente.
+5. El build y deploy se harán automáticamente. Accede a tu API desde la URL que te da Railway.
+
+## Variables de entorno recomendadas
+- DATABASE_URL
+- JWT_SECRET
+- JWT_REFRESH_SECRET
+- JWT_EXPIRATION
+- JWT_REFRESH_EXPIRATION
+- PORT (opcional, Railway asigna uno por defecto)
+
+## Notas
+- No necesitas archivos de configuración de Vercel.
+- El build ejecuta Prisma y compila NestJS automáticamente.
